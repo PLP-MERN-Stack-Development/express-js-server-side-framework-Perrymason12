@@ -57,10 +57,75 @@ app.get('/api/products', (req, res) => {
   res.json(products);
 });
 
+// get a specific product by id
+app.get('/api/products/:id', (req, res) => {
+  const product = products.find(p => p.id === req.params.id);
+  if (product) {
+    res.json(product);
+  } else {
+    res.status(404).json({ message: 'Product not found' });
+  }
+});
+
+// create a new product
+app.post('/api/products', (req, res) => {
+  const newProduct = { id: uuidv4(), ...req.body };
+  products.push(newProduct);
+  res.status(201).json(newProduct);
+});
+
+// update a product
+app.put('/api/products/:id', (req, res) => {
+  const index = products.findIndex(p => p.id === req.params.id);
+  if (index !== -1) {
+    products[index] = { id: req.params.id, ...req.body };
+    res.json(products[index]);
+  } else {
+    res.status(404).json({ message: 'Product not found' });
+  }
+});
+// delete a product
+app.delete('/api/products/:id', (req, res) => {
+  const index = products.findIndex(p => p.id === req.params.id);
+  if (index !== -1) {
+    const deletedProduct = products.splice(index, 1);
+    res.json(deletedProduct[0]);
+  } else {
+    res.status(404).json({ message: 'Product not found' });
+  }
+});
+
 // TODO: Implement custom middleware for:
 // - Request logging
 // - Authentication
 // - Error handling
+// Example middleware for request logging
+app.use((req, res, next) => {
+  console.log(`${req.method} ${req.url}`);
+  next();
+});
+
+// middle ware for error handling
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ message: 'Something went wrong!' });
+});
+
+
+
+// authentication middleware
+app.use((req, res, next) => {
+  const apiKey = req.headers['x-api-key'];
+  
+  if (!apiKey || apiKey !== process.env.API_KEY) {
+    return res.status(401).json({ 
+      message: 'Unauthorized. Invalid API key.' 
+    });
+  }
+  
+  next();
+});
+
 
 // Start the server
 app.listen(PORT, () => {
